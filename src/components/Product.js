@@ -23,9 +23,10 @@ const Selection = ({ options, ...props }) => (
 )
 
 const Product = ({
-  labels,
-  options,
-  selection,
+  labels = {},
+  images = [],
+  options = {},
+  selection = {},
   isSelectionValid,
   onSelectionChange,
   onBuy,
@@ -33,15 +34,14 @@ const Product = ({
   const buyButtonClasses = classNames('button', 'is-outlined', {
     'is-active': isSelectionValid,
   })
-  console.log('Valid', isSelectionValid)
+  const imageSrc =
+    images[0] || 'https://bulma.io/images/placeholders/480x480.png'
+
   return (
     <article className="columns is-centered">
       <div className="column is-one-third">
         <figure className="image is-square">
-          <img
-            alt="product"
-            src="https://bulma.io/images/placeholders/480x480.png"
-          />
+          <img alt="product" src={imageSrc} />
         </figure>
       </div>
       <div className="column">
@@ -79,22 +79,46 @@ const Product = ({
 }
 
 class ProductContainer extends Component {
-  state = {
-    selection: {
-      color: undefined,
-      size: undefined,
-    },
+  state = {}
+
+  constructor(props) {
+    super(props)
+
+    const { product, skus = [] } = props
+
+    const attributes = product.attributes || []
+
+    const selection = attributes.reduce((acc, key) => {
+      acc[key] = undefined
+      return acc
+    }, {})
+
+    const skuAttributeValues = attributes.reduce((acc, key) => {
+      const values = acc[key] || []
+
+      for (const sku of skus) {
+        if (!values.includes(sku.attributes[key])) {
+          values.push(sku.attributes[key])
+        }
+      }
+
+      acc[key] = values
+      return acc
+    }, {})
+
+    const options = Object.keys(skuAttributeValues).map(key => ({
+      key: key,
+      values: skuAttributeValues[key].map(value => ({
+        key: value,
+        label: value,
+      })),
+    }))
+
+    this.state = {
+      selection,
+      options,
+    }
   }
-  sizeOptions = [
-    { key: 'small', label: 'S' },
-    { key: 'medium', label: 'M' },
-    { key: 'large', label: 'L' },
-  ]
-  colorOptions = [
-    { key: 'pink', label: 'Pink' },
-    { key: 'yellow', label: 'Yellow' },
-    { key: 'blue', label: 'Blue' },
-  ]
 
   onSelectionChange = (type, selectedKey) => {
     this.setState({
@@ -113,27 +137,27 @@ class ProductContainer extends Component {
   }
 
   onBuy = () => {
-    console.log('Buy', this.state.selection)
+    const selectedSku = this.props.skus.find(sku => {
+      return Object.keys(this.state.selection).reduce(
+        (acc, key) => acc && sku.attributes[key] === this.state.selection[key],
+        true
+      )
+    })
+    console.log('Buy', this.state.selection, selectedSku)
   }
 
   render() {
+    const { name, images, description } = this.props.product
+
     const props = {
       labels: {
-        title: 'Product title',
+        title: name,
         price: '$10',
-        description: <p>description</p>,
+        description: description,
         buyButton: 'Buy',
       },
-      options: [
-        {
-          key: 'size',
-          values: this.sizeOptions,
-        },
-        {
-          key: 'color',
-          values: this.colorOptions,
-        },
-      ],
+      images: images,
+      options: this.state.options,
       selection: this.state.selection,
       isSelectionValid: this.isSelectionValid(),
       onSelectionChange: this.onSelectionChange,

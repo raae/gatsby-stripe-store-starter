@@ -9,6 +9,13 @@ module.exports = {
     'gatsby-plugin-react-helmet',
     'gatsby-plugin-sass',
     {
+      resolve: `gatsby-source-stripe`,
+      options: {
+        objects: ['products', 'skus'],
+        secretKey: process.env.STRIPE_KEY,
+      },
+    },
+    {
       resolve: `gatsby-plugin-manifest`,
       options: {
         name: 'Stripe Store',
