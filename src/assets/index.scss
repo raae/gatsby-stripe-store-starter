@@ -1,0 +1,10 @@
+@charset "utf-8";
+
+$widescreen-enabled: false;
+$fullhd-enabled: false;
+
+@import '../../node_modules/bulma/bulma.sass';
+
+.columns.is-centered {
+  align-items: center;
+}
