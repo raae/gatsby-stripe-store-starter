@@ -1,8 +1,6 @@
 import React, { Component } from 'react'
 import { uniq, keys, zipObject } from 'lodash'
 
-import Product from './Product'
-
 class StripeProduct extends Component {
   state = {
     attributeKeys: [],
@@ -68,16 +66,16 @@ class StripeProduct extends Component {
   }
 
   render() {
-    const { name, images, description } = this.props.product
+    const { product, Product } = this.props
 
     const props = {
       labels: {
-        title: name,
+        title: product.name,
         price: '$10',
-        description: description,
+        description: product.description,
         buyButton: 'Buy',
       },
-      images: images,
+      images: product.images,
       attributeKeys: this.state.attributeKeys,
       attributes: this.state.attributes,
       selectedAttributes: this.state.selectedAttributes,

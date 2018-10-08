@@ -3,6 +3,7 @@ import { StaticQuery, graphql } from 'gatsby'
 
 import Layout from '../layouts/DefaultLayout'
 import StripeProduct from '../components/StripeProduct'
+import Product from '../components/Product'
 
 const IndexPage = () => (
   <StaticQuery
@@ -47,6 +48,7 @@ const IndexPage = () => (
               key={node.id}
               product={node}
               skus={skuNodes.filter(sku => sku.product.id === node.id)}
+              Product={Product}
             />
           ))}
         </Layout>
