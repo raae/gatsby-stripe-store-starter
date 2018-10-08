@@ -2,7 +2,7 @@ import React from 'react'
 import { StaticQuery, graphql } from 'gatsby'
 
 import Layout from '../layouts/DefaultLayout'
-import Product from '../components/Product'
+import StripeProduct from '../components/StripeProduct'
 
 const IndexPage = () => (
   <StaticQuery
@@ -43,7 +43,7 @@ const IndexPage = () => (
       return (
         <Layout>
           {productNodes.map(node => (
-            <Product
+            <StripeProduct
               key={node.id}
               product={node}
               skus={skuNodes.filter(sku => sku.product.id === node.id)}
