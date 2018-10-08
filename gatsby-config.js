@@ -4,6 +4,7 @@ module.exports = {
     description: 'A store with products from Stripe',
     keywords: '',
     lang: 'no',
+    locale: 'no-bok',
   },
   plugins: [
     'gatsby-plugin-react-helmet',

@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { uniq, zipObject } from 'lodash'
+import { uniq, zipObject, join } from 'lodash'
 
 const defaultState = {
   attributeKeys: [],
@@ -56,8 +56,8 @@ class StripeProduct extends Component {
     )
   }
 
-  onBuy = () => {
-    const selectedSku = this.props.skus.find(sku => {
+  selectedSku = () => {
+    return this.props.skus.find(sku => {
       return this.state.attributes.reduce(
         (acc, attribute) =>
           acc &&
@@ -66,8 +66,26 @@ class StripeProduct extends Component {
         true
       )
     })
+  }
 
-    console.log('Buy', this.state.selectedAttributes, selectedSku)
+  priceLabel = () => {
+    const skuToLocalizedPrice = (sku, locale) => {
+      return new Intl.NumberFormat(locale, {
+        style: 'currency',
+        currency: sku.currency,
+      }).format(sku.price / 100)
+    }
+
+    let { skus = [], locale } = this.props
+
+    skus = this.selectedSku() ? [this.selectedSku()] : skus
+    const prices = uniq(skus.map(sku => skuToLocalizedPrice(sku, locale)))
+
+    return join(prices, ' / ')
+  }
+
+  onBuy = () => {
+    console.log('Buy', this.state.selectedAttributes, this.selectedSku())
     this.setState({ selectedAttributes: {} })
   }
 
@@ -77,7 +95,7 @@ class StripeProduct extends Component {
     const props = {
       labels: {
         title: product.name,
-        price: '$10',
+        price: this.priceLabel(),
         description: product.description,
         buyButton: labels.buy,
       },

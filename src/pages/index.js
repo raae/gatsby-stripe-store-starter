@@ -9,6 +9,11 @@ const IndexPage = () => (
   <StaticQuery
     query={graphql`
       query IndexProductSku {
+        site {
+          siteMetadata {
+            locale
+          }
+        }
         allStripeProduct {
           edges {
             node {
@@ -30,6 +35,7 @@ const IndexPage = () => (
                 gender
               }
               price
+              currency
               product {
                 id
               }
@@ -39,6 +45,7 @@ const IndexPage = () => (
       }
     `}
     render={data => {
+      const { locale } = data.site.siteMetadata
       const productNodes = data.allStripeProduct.edges.map(edge => edge.node)
       const skuNodes = data.allStripeSku.edges.map(edge => edge.node)
       return (
@@ -46,6 +53,7 @@ const IndexPage = () => (
           {productNodes.map(node => (
             <StripeProduct
               key={node.id}
+              locale={locale}
               product={node}
               skus={skuNodes.filter(sku => sku.product.id === node.id)}
               labels={{
