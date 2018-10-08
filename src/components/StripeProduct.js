@@ -13,6 +13,7 @@ class StripeProduct extends Component {
 
     const { product = {}, skus = [], labels = {} } = props
     const attributeKeys = product.attributes || []
+
     const attributeLabels = {
       ...zipObject(attributeKeys, attributeKeys.map(() => ({}))),
       ...labels.attributes,
@@ -41,28 +42,34 @@ class StripeProduct extends Component {
   }
 
   onSelectedAttributesChange = (type, selectedKey) => {
+    const { selectedAttributes = {} } = this.state
+
     this.setState({
       selectedAttributes: {
-        ...this.state.selectedAttributes,
+        ...selectedAttributes,
         [type]: selectedKey,
       },
     })
   }
 
   isSelectedAttributesValid = () => {
-    return this.state.attributes.reduce(
-      (acc, attribute) => acc && !!this.state.selectedAttributes[attribute.key],
+    const { selectedAttributes = {}, attributes = [] } = this.state
+
+    return attributes.reduce(
+      (acc, attribute) => acc && !!selectedAttributes[attribute.key],
       true
     )
   }
 
   selectedSku = () => {
-    return this.props.skus.find(sku => {
-      return this.state.attributes.reduce(
+    const { skus = [] } = this.props
+    const { selectedAttributes = {}, attributes = [] } = this.state
+
+    return skus.find(sku => {
+      return attributes.reduce(
         (acc, attribute) =>
           acc &&
-          sku.attributes[attribute.key] ===
-            this.state.selectedAttributes[attribute.key],
+          sku.attributes[attribute.key] === selectedAttributes[attribute.key],
         true
       )
     })
@@ -85,12 +92,15 @@ class StripeProduct extends Component {
   }
 
   onBuy = () => {
-    console.log('Buy', this.state.selectedAttributes, this.selectedSku())
+    const { selectedAttributes = {} } = this.state
+
+    console.log('Buy', selectedAttributes, this.selectedSku())
     this.setState({ selectedAttributes: {} })
   }
 
   render() {
     const { product, labels, Product } = this.props
+    const { selectedAttributes = {}, attributes = [] } = this.state
 
     const props = {
       labels: {
@@ -100,8 +110,8 @@ class StripeProduct extends Component {
         buyButton: labels.buy,
       },
       images: product.images,
-      attributes: this.state.attributes,
-      selectedAttributes: this.state.selectedAttributes,
+      attributes: attributes,
+      selectedAttributes: selectedAttributes,
       isSelectedAttributesValid: this.isSelectedAttributesValid(),
       onSelectedAttributesChange: this.onSelectedAttributesChange,
       onBuy: this.onBuy,
