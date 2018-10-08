@@ -1,13 +1,13 @@
 import React, { Component } from 'react'
-import { uniq, keys, zipObject } from 'lodash'
+import { uniq, zipObject } from 'lodash'
+
+const defaultState = {
+  attributeKeys: [],
+  selectedAttributes: {},
+  attributes: {},
+}
 
 class StripeProduct extends Component {
-  state = {
-    attributeKeys: [],
-    selectedAttributes: {},
-    attributes: {},
-  }
-
   constructor(props) {
     super(props)
 
@@ -18,22 +18,24 @@ class StripeProduct extends Component {
       ...labels.attributes,
     }
 
-    const attributes = zipObject(
-      attributeKeys,
-      attributeKeys.map(key => {
-        return uniq(
-          skus.map(sku => {
-            return sku.attributes[key]
-          })
-        ).map(value => ({
-          key: value,
-          label: attributeLabels[key][value] || value,
-        }))
-      })
-    )
+    const attributes = attributeKeys.map(key => {
+      const options = uniq(
+        skus.map(sku => {
+          return sku.attributes[key]
+        })
+      ).map(value => ({
+        key: value,
+        label: attributeLabels[key][value] || value,
+      }))
+
+      return {
+        key,
+        options,
+      }
+    })
 
     this.state = {
-      attributeKeys,
+      ...defaultState,
       attributes,
     }
   }
@@ -48,24 +50,25 @@ class StripeProduct extends Component {
   }
 
   isSelectedAttributesValid = () => {
-    return keys(this.state.selectedAttributes).reduce(
-      (acc, key) => acc && !!this.state.selectedAttributes[key],
+    return this.state.attributes.reduce(
+      (acc, attribute) => acc && !!this.state.selectedAttributes[attribute.key],
       true
     )
   }
 
   onBuy = () => {
     const selectedSku = this.props.skus.find(sku => {
-      return keys(this.state.selectedAttributes).reduce(
-        (acc, key) =>
-          acc && sku.attributes[key] === this.state.selectedAttributes[key],
+      return this.state.attributes.reduce(
+        (acc, attribute) =>
+          acc &&
+          sku.attributes[attribute.key] ===
+            this.state.selectedAttributes[attribute.key],
         true
       )
     })
 
+    console.log('Buy', this.state.selectedAttributes, selectedSku)
     this.setState({ selectedAttributes: {} })
-
-    console.log('Buy', selectedSku)
   }
 
   render() {
@@ -79,7 +82,6 @@ class StripeProduct extends Component {
         buyButton: labels.buy,
       },
       images: product.images,
-      attributeKeys: this.state.attributeKeys,
       attributes: this.state.attributes,
       selectedAttributes: this.state.selectedAttributes,
       isSelectedAttributesValid: this.isSelectedAttributesValid(),

@@ -25,9 +25,8 @@ const AttributeSelection = ({ options, ...props }) => (
 const Product = ({
   labels = {},
   images = [],
-  attributes = {},
+  attributes = [],
   selectedAttributes = {},
-  attributeKeys = [],
   isSelectedAttributesValid,
   onSelectedAttributesChange,
   onBuy,
@@ -49,13 +48,13 @@ const Product = ({
         <p className="subtitle id-5">{labels.price}</p>
         <div className="columns is-centered">
           <div className="column">
-            {attributeKeys.map(attributeKey => (
+            {attributes.map(attribute => (
               <AttributeSelection
-                key={attributeKey}
-                selectedKey={selectedAttributes[attributeKey]}
-                options={attributes[attributeKey]}
-                onChange={selectedValueKey =>
-                  onSelectedAttributesChange([attributeKey], selectedValueKey)
+                key={attribute.key}
+                selectedKey={selectedAttributes[attribute.key]}
+                options={attribute.options}
+                onChange={selectedOption =>
+                  onSelectedAttributesChange([attribute.key], selectedOption)
                 }
               />
             ))}
