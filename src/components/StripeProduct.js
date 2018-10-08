@@ -11,9 +11,12 @@ class StripeProduct extends Component {
   constructor(props) {
     super(props)
 
-    const { product, skus = [] } = props
-
+    const { product = {}, skus = [], labels = {} } = props
     const attributeKeys = product.attributes || []
+    const attributeLabels = {
+      ...zipObject(attributeKeys, attributeKeys.map(() => ({}))),
+      ...labels.attributes,
+    }
 
     const attributes = zipObject(
       attributeKeys,
@@ -24,7 +27,7 @@ class StripeProduct extends Component {
           })
         ).map(value => ({
           key: value,
-          label: value,
+          label: attributeLabels[key][value] || value,
         }))
       })
     )
@@ -66,14 +69,14 @@ class StripeProduct extends Component {
   }
 
   render() {
-    const { product, Product } = this.props
+    const { product, labels, Product } = this.props
 
     const props = {
       labels: {
         title: product.name,
         price: '$10',
         description: product.description,
-        buyButton: 'Buy',
+        buyButton: labels.buy,
       },
       images: product.images,
       attributeKeys: this.state.attributeKeys,

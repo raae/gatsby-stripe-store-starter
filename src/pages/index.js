@@ -48,6 +48,19 @@ const IndexPage = () => (
               key={node.id}
               product={node}
               skus={skuNodes.filter(sku => sku.product.id === node.id)}
+              labels={{
+                buy: 'Kjøp',
+                attributes: {
+                  gender: {
+                    Male: 'Mann',
+                    Female: 'Dame',
+                  },
+                  color: {
+                    White: 'Hvit',
+                    Black: 'Svart',
+                  },
+                },
+              }}
               Product={Product}
             />
           ))}
