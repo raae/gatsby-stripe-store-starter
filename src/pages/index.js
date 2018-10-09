@@ -67,7 +67,7 @@ const IndexPage = () => (
                   },
                 },
               }}
-              Product={Product}
+              ProductComponent={Product}
             />
           ))}
         </Layout>

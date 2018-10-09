@@ -99,7 +99,7 @@ class StripeProduct extends Component {
   }
 
   render() {
-    const { product, labels, Product } = this.props
+    const { product, labels, ProductComponent } = this.props
     const { selectedAttributes = {}, attributes = [] } = this.state
 
     const props = {
@@ -117,7 +117,7 @@ class StripeProduct extends Component {
       onBuy: this.onBuy,
     }
 
-    return <Product {...props} />
+    return <ProductComponent {...props} />
   }
 }
 
