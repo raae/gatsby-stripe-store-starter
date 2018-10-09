@@ -1,18 +1,18 @@
-import React from 'react'
-import classNames from 'classnames'
+import React from "react";
+import classNames from "classnames";
 
 const Option = ({ option, selectedKey, onChange }) => {
-  const optionClasses = classNames('button', 'is-small', {
-    'is-focused': option.key === selectedKey,
-  })
+  const optionClasses = classNames("button", "is-small", {
+    "is-focused": option.key === selectedKey
+  });
   return (
     <p className="control">
       <button onClick={() => onChange(option.key)} className={optionClasses}>
         {option.label}
       </button>
     </p>
-  )
-}
+  );
+};
 
 const AttributeSelection = ({ options, ...props }) => (
   <div className="field is-grouped">
@@ -20,7 +20,7 @@ const AttributeSelection = ({ options, ...props }) => (
       <Option key={option.key} option={option} {...props} />
     ))}
   </div>
-)
+);
 
 const Product = ({
   labels = {},
@@ -29,12 +29,12 @@ const Product = ({
   selectedAttributes = {},
   isSelectedAttributesValid,
   onSelectedAttributesChange,
-  onBuy,
+  onBuy
 }) => {
-  const buyButtonClasses = classNames('button', 'is-outlined', {
-    'is-active': isSelectedAttributesValid,
-  })
-  const imageSrc = images[0]
+  const buyButtonClasses = classNames("button", "is-outlined", {
+    "is-active": isSelectedAttributesValid
+  });
+  const imageSrc = images[0];
 
   return (
     <article className="columns is-centered">
@@ -74,7 +74,7 @@ const Product = ({
         <div className="content">{labels.description}</div>
       </div>
     </article>
-  )
-}
+  );
+};
 
-export default Product
+export default Product;

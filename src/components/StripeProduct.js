@@ -1,69 +1,69 @@
-import React, { Component } from 'react'
-import { uniq, zipObject, join } from 'lodash'
+import React, { Component } from "react";
+import { uniq, zipObject, join } from "lodash";
 
 const defaultState = {
   attributeKeys: [],
   selectedAttributes: {},
-  attributes: {},
-}
+  attributes: {}
+};
 
 class StripeProduct extends Component {
   constructor(props) {
-    super(props)
+    super(props);
 
-    const { product = {}, skus = [], labels = {} } = props
-    const attributeKeys = product.attributes || []
+    const { product = {}, skus = [], labels = {} } = props;
+    const attributeKeys = product.attributes || [];
 
     const attributeLabels = {
       ...zipObject(attributeKeys, attributeKeys.map(() => ({}))),
-      ...labels.attributes,
-    }
+      ...labels.attributes
+    };
 
     const attributes = attributeKeys.map(key => {
       const options = uniq(
         skus.map(sku => {
-          return sku.attributes[key]
+          return sku.attributes[key];
         })
       ).map(value => ({
         key: value,
-        label: attributeLabels[key][value] || value,
-      }))
+        label: attributeLabels[key][value] || value
+      }));
 
       return {
         key,
-        options,
-      }
-    })
+        options
+      };
+    });
 
     this.state = {
       ...defaultState,
-      attributes,
-    }
+      attributes
+    };
   }
 
   onSelectedAttributesChange = (type, selectedKey) => {
-    const { selectedAttributes = {} } = this.state
+    const { selectedAttributes = {} } = this.state;
 
     this.setState({
       selectedAttributes: {
         ...selectedAttributes,
-        [type]: selectedKey,
-      },
-    })
-  }
+        [type]: selectedKey
+      }
+    });
+  };
 
   isSelectedAttributesValid = () => {
-    const { selectedAttributes = {}, attributes = [] } = this.state
+    const { selectedAttributes = {}, attributes = [] } = this.state;
 
     return attributes.reduce(
       (acc, attribute) => acc && !!selectedAttributes[attribute.key],
       true
-    )
-  }
+    );
+  };
 
   selectedSku = () => {
-    const { skus = [] } = this.props
-    const { selectedAttributes = {}, attributes = [] } = this.state
+    const { skus = [] } = this.props;
+    const { selectedAttributes = {}, attributes = [] } = this.state;
 
     return skus.find(sku => {
       return attributes.reduce(
@@ -71,54 +71,54 @@ class StripeProduct extends Component {
           acc &&
           sku.attributes[attribute.key] === selectedAttributes[attribute.key],
         true
-      )
-    })
-  }
+      );
+    });
+  };
 
   priceLabel = () => {
     const skuToLocalizedPrice = (sku, locale) => {
       return new Intl.NumberFormat(locale, {
-        style: 'currency',
-        currency: sku.currency,
-      }).format(sku.price / 100)
-    }
+        style: "currency",
+        currency: sku.currency
+      }).format(sku.price / 100);
+    };
 
-    let { skus = [], locale } = this.props
+    let { skus = [], locale } = this.props;
 
-    skus = this.selectedSku() ? [this.selectedSku()] : skus
-    const prices = uniq(skus.map(sku => skuToLocalizedPrice(sku, locale)))
+    skus = this.selectedSku() ? [this.selectedSku()] : skus;
+    const prices = uniq(skus.map(sku => skuToLocalizedPrice(sku, locale)));
 
-    return join(prices, ' / ')
-  }
+    return join(prices, " / ");
+  };
 
   onBuy = () => {
-    const { selectedAttributes = {} } = this.state
+    const { selectedAttributes = {} } = this.state;
 
-    console.log('Buy', selectedAttributes, this.selectedSku())
-    this.setState({ selectedAttributes: {} })
-  }
+    console.log("Buy", selectedAttributes, this.selectedSku());
+    this.setState({ selectedAttributes: {} });
+  };
 
   render() {
-    const { product, labels, ProductComponent } = this.props
-    const { selectedAttributes = {}, attributes = [] } = this.state
+    const { product, labels, ProductComponent } = this.props;
+    const { selectedAttributes = {}, attributes = [] } = this.state;
 
     const props = {
       labels: {
         title: product.name,
         price: this.priceLabel(),
         description: product.description,
-        buyButton: labels.buy,
+        buyButton: labels.buy
       },
       images: product.images,
       attributes: attributes,
       selectedAttributes: selectedAttributes,
       isSelectedAttributesValid: this.isSelectedAttributesValid(),
       onSelectedAttributesChange: this.onSelectedAttributesChange,
-      onBuy: this.onBuy,
-    }
+      onBuy: this.onBuy
+    };
 
-    return <ProductComponent {...props} />
+    return <ProductComponent {...props} />;
   }
 }
 
-export default StripeProduct
+export default StripeProduct;
