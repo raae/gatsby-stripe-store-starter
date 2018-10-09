@@ -1,8 +1,8 @@
 {
-  "name": "gatsby-starter-default",
-  "description": "Gatsby default starter",
-  "version": "1.0.0",
-  "author": "Kyle Mathews <mathews.kyle@gmail.com>",
+  "name": "gatsby-stripe-store-starer",
+  "description": "Ecommerce started with data from Stripe",
+  "version": "0.0.1",
+  "author": "Benedicte Raae (raae.codes)",
   "dependencies": {
     "bulma": "^0.7.1",
     "classnames": "^2.2.6",
@@ -19,12 +19,14 @@
     "react-helmet": "^5.2.0"
   },
   "keywords": [
-    "gatsby"
+    "gatsby",
+    "stripe",
+    "ecommerce"
   ],
   "license": "MIT",
   "scripts": {
     "build": "gatsby build",
-    "develop": "rm -r -r .cache && gatsby develop",
+    "develop": "rm -r -f .cache && gatsby develop",
     "format": "prettier --write '**/*.js'",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -33,6 +35,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/gatsbyjs/gatsby-starter-default"
-  }
+    "url": "https://github.com/raae/gatsby-stripe-store-starter"
+  },
+  "bugs": {
+    "url": "https://github.com/raae/gatsby-stripe-store-starter/issues"
+  },
+  "homepage": "https://github.com/raae/gatsby-stripe-store-starter#readme"
 }
