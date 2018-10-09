@@ -17,7 +17,7 @@ const IndexPage = () => (
         allStripeProduct {
           edges {
             node {
-              id
+              stripeId
               name
               attributes
               images
@@ -28,7 +28,7 @@ const IndexPage = () => (
         allStripeSku {
           edges {
             node {
-              id
+              stripeId
               attributes {
                 size
                 color
@@ -36,9 +36,7 @@ const IndexPage = () => (
               }
               price
               currency
-              product {
-                id
-              }
+              product
             }
           }
         }
@@ -55,7 +53,7 @@ const IndexPage = () => (
               key={node.id}
               locale={locale}
               product={node}
-              skus={skuNodes.filter(sku => sku.product.id === node.id)}
+              skus={skuNodes.filter(sku => sku.product === node.stripeId)}
               labels={{
                 buy: 'Kjøp',
                 attributes: {
