@@ -50,7 +50,7 @@ const IndexPage = () => (
         <Layout>
           {productNodes.map(node => (
             <StripeProduct
-              key={node.id}
+              key={node.stripeId}
               locale={locale}
               product={node}
               skus={skuNodes.filter(sku => sku.product === node.stripeId)}
