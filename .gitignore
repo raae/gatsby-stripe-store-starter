@@ -1,7 +1,10 @@
+secrets.md
+
 # Project dependencies
 .cache
 node_modules
 yarn-error.log
+secrets.md
 
 # Build directory
 /public

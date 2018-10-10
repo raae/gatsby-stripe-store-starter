@@ -24,12 +24,14 @@ const AttributeSelection = ({ options, ...props }) => (
 
 const Product = ({
   labels = {},
+  paymentMessage,
   images = [],
   attributes = [],
   selectedAttributes = {},
   isSelectedAttributesValid,
   onSelectedAttributesChange,
-  onBuy
+  onBuy,
+  onClearPaymentMessage
 }) => {
   const buyButtonClasses = classNames("button", "is-outlined", {
     "is-active": isSelectedAttributesValid
@@ -37,17 +39,20 @@ const Product = ({
   const imageSrc = images[0];
 
   return (
-    <article className="columns is-centered">
-      <div className="column is-one-third">
+    <article className="columns is-vertically-centered">
+      <div className="column is-4">
         <figure className="image is-square">
           {imageSrc && <img alt="product" src={imageSrc} />}
         </figure>
       </div>
-      <div className="column">
+      <div className="column is-6">
         <h2 className="title">{labels.title}</h2>
         <p className="subtitle id-5">{labels.price}</p>
-        <div className="columns is-centered">
-          <div className="column">
+        <div
+          style={{ position: "relative" }}
+          className="columns is-vertically-centered"
+        >
+          <div className="column is-two-thirds">
             {attributes.map(attribute => (
               <AttributeSelection
                 key={attribute.key}
@@ -70,6 +75,17 @@ const Product = ({
               </button>
             </div>
           </div>
+          {paymentMessage && (
+            <div className="is-overlay has-background-white center-content">
+              <div className="notification">
+                <button
+                  onClick={() => onClearPaymentMessage()}
+                  className="delete is-small"
+                />
+                <p>{paymentMessage}</p>
+              </div>
+            </div>
+          )}
         </div>
         <div className="content">{labels.description}</div>
       </div>

@@ -12,6 +12,7 @@ const IndexPage = () => (
         site {
           siteMetadata {
             locale
+            lang
           }
         }
         allStripeProduct {
@@ -43,16 +44,25 @@ const IndexPage = () => (
       }
     `}
     render={data => {
-      const { locale } = data.site.siteMetadata;
+      const { locale, lang } = data.site.siteMetadata;
       const productNodes = data.allStripeProduct.edges.map(edge => edge.node);
       const skuNodes = data.allStripeSku.edges.map(edge => edge.node);
+      const stripePublishableKey = process.env.GATSBY_STRIPE_PUBLISHABLE_KEY;
+      if (!stripePublishableKey) {
+        console.warn(
+          "Please provide GATSBY_STRIPE_PUBLISHABLE_KEY as an env variable"
+        );
+      }
       return (
         <Layout>
           {productNodes.map(node => (
             <StripeProduct
               key={node.stripeId}
+              stripeKey={stripePublishableKey}
               locale={locale}
+              lang={lang}
               product={node}
+              shippable={false}
               skus={skuNodes.filter(sku => sku.product === node.stripeId)}
               labels={{
                 buy: "Kjøp",
@@ -65,6 +75,11 @@ const IndexPage = () => (
                     White: "Hvit",
                     Black: "Svart"
                   }
+                },
+                paymentMessage: {
+                  success:
+                    "Takk for handelen, t-skjorte på vei til deg innen få dager.",
+                  fail: "Noe gikk galt, prøv igen eller ta kontakt. "
                 }
               }}
               ProductComponent={Product}

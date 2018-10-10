@@ -1,10 +1,21 @@
 import React, { Component } from "react";
-import { uniq, zipObject, join } from "lodash";
+import { uniq, zipObject, join, values } from "lodash";
+
+const skuToLocalizedPrice = (sku, locale) => {
+  return new Intl.NumberFormat(locale, {
+    style: "currency",
+    currency: sku.currency
+  }).format(sku.price / 100);
+};
+
+const createStripeOrder = (token, skuId) => {
+  console.log("Create order", token, skuId);
+  return Promise.resolve();
+};
 
 const defaultState = {
-  attributeKeys: [],
   selectedAttributes: {},
-  attributes: {}
+  attributes: []
 };
 
 class StripeProduct extends Component {
@@ -41,6 +52,16 @@ class StripeProduct extends Component {
     };
   }
 
+  componentDidMount() {
+    const { product = {}, lang, stripeKey } = this.props;
+
+    this.configureStripeCheckout({
+      key: stripeKey,
+      name: product.name,
+      locale: lang
+    });
+  }
+
   onSelectedAttributesChange = (type, selectedKey) => {
     const { selectedAttributes = {} } = this.state;
 
@@ -50,6 +71,10 @@ class StripeProduct extends Component {
         [type]: selectedKey
       }
     });
+  };
+
+  resetSelectedAttributes = () => {
+    this.setState({ selectedAttributes: {} });
   };
 
   isSelectedAttributesValid = () => {
@@ -63,7 +88,7 @@ class StripeProduct extends Component {
 
   selectedSku = () => {
     const { skus = [] } = this.props;
-    const { selectedAttributes = {}, attributes = [] } = this.state;
+    const { selectedAttributes = {}, attributes = {} } = this.state;
 
     return skus.find(sku => {
       return attributes.reduce(
@@ -76,13 +101,6 @@ class StripeProduct extends Component {
   };
 
   priceLabel = () => {
-    const skuToLocalizedPrice = (sku, locale) => {
-      return new Intl.NumberFormat(locale, {
-        style: "currency",
-        currency: sku.currency
-      }).format(sku.price / 100);
-    };
-
     let { skus = [], locale } = this.props;
 
     skus = this.selectedSku() ? [this.selectedSku()] : skus;
@@ -91,16 +109,67 @@ class StripeProduct extends Component {
     return join(prices, " / ");
   };
 
-  onBuy = () => {
-    const { selectedAttributes = {} } = this.state;
+  configureStripeCheckout = (args, closeFunc) => {
+    if (!window.StripeCheckout) {
+      console.error("Stripe Checkout is not available on window");
+      return;
+    }
 
-    console.log("Buy", selectedAttributes, this.selectedSku());
-    this.setState({ selectedAttributes: {} });
+    this.stripeHandler = window.StripeCheckout.configure({
+      ...args,
+      closed: closeFunc
+    });
+  };
+
+  openStripeCheckout = (args, tokenFunc) => {
+    if (!this.stripeHandler) {
+      console.error("Stripe Checkout is not available on window");
+      return;
+    }
+
+    this.stripeHandler.open({
+      ...args,
+      token: tokenFunc
+    });
+  };
+
+  onBuy = () => {
+    const { labels, shippable } = this.props;
+    const selectedSku = this.selectedSku();
+
+    this.openStripeCheckout(
+      {
+        amount: selectedSku.price,
+        currency: selectedSku.currency,
+        description: join(
+          [...values(selectedSku.attributes), skuToLocalizedPrice(selectedSku)],
+          " / "
+        ),
+        billingAddress: shippable
+      },
+      token =>
+        createStripeOrder(token, selectedSku.stripeId)
+          .then(() => {
+            this.resetSelectedAttributes();
+            this.setState({
+              paymentMessage: labels.paymentMessage.success
+            });
+          })
+          .catch(() => {
+            this.setState({
+              paymentMessage: labels.paymentMessage.fail
+            });
+          })
+    );
   };
 
   render() {
     const { product, labels, ProductComponent } = this.props;
-    const { selectedAttributes = {}, attributes = [] } = this.state;
+    const {
+      selectedAttributes = {},
+      attributes = [],
+      paymentMessage
+    } = this.state;
 
     const props = {
       labels: {
@@ -109,12 +178,18 @@ class StripeProduct extends Component {
         description: product.description,
         buyButton: labels.buy
       },
+      paymentMessage: paymentMessage,
       images: product.images,
       attributes: attributes,
       selectedAttributes: selectedAttributes,
       isSelectedAttributesValid: this.isSelectedAttributesValid(),
       onSelectedAttributesChange: this.onSelectedAttributesChange,
-      onBuy: this.onBuy
+      onBuy: this.onBuy,
+      onClearPaymentMessage: () => {
+        this.setState({
+          paymentMessage: undefined
+        });
+      }
     };
 
     return <ProductComponent {...props} />;
