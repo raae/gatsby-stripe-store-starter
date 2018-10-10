@@ -23,6 +23,7 @@ const IndexPage = () => (
               attributes
               images
               description
+              shippable
             }
           }
         }

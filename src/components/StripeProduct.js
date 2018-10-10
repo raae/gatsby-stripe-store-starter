@@ -1,5 +1,6 @@
 import React, { Component } from "react";
 import { uniq, zipObject, join, values } from "lodash";
+import axios from "axios";
 
 const skuToLocalizedPrice = (sku, locale) => {
   return new Intl.NumberFormat(locale, {
@@ -8,9 +9,30 @@ const skuToLocalizedPrice = (sku, locale) => {
   }).format(sku.price / 100);
 };
 
-const createStripeOrder = (token, skuId) => {
-  console.log("Create order", token, skuId);
-  return Promise.resolve();
+const callStripeLambdaEndpoint = (endpoint, args) => {
+  console.log("callStripeLambdaEndpoint", args);
+  return axios
+    .post(`/.netlify/functions/${endpoint}`, args)
+    .then(response => {
+      console.log(`/.netlify/functions/${endpoint}`, response);
+      return Promise.resolve(response);
+    })
+    .catch(error => {
+      const errorLabel = `/.netlify/functions/${endpoint}`;
+      if (error.response) {
+        console.error(errorLabel, error.response.status, error.response.data);
+      } else if (error.request) {
+        console.error(errorLabel, error.request);
+      } else {
+        console.error(errorLabel, error.message);
+      }
+
+      return Promise.reject(error);
+    });
+};
+
+const createAndPayStripeOrder = args => {
+  return callStripeLambdaEndpoint("createAndPayStripeOrder", args);
 };
 
 const defaultState = {
@@ -133,33 +155,49 @@ class StripeProduct extends Component {
     });
   };
 
+  paymentSucess = () => {
+    const { labels } = this.props;
+
+    this.resetSelectedAttributes();
+    this.setState({
+      paymentMessage: labels.paymentMessage.success
+    });
+  };
+
+  paymentFail = () => {
+    const { labels } = this.props;
+
+    this.setState({
+      paymentMessage: labels.paymentMessage.fail
+    });
+  };
+
   onBuy = () => {
-    const { labels, shippable } = this.props;
+    const { product = {} } = this.props;
     const selectedSku = this.selectedSku();
+    const skuDescription = join(
+      [...values(selectedSku.attributes), skuToLocalizedPrice(selectedSku)],
+      " / "
+    );
 
     this.openStripeCheckout(
       {
         amount: selectedSku.price,
         currency: selectedSku.currency,
-        description: join(
-          [...values(selectedSku.attributes), skuToLocalizedPrice(selectedSku)],
-          " / "
-        ),
-        billingAddress: shippable
+        billingAddress: !!product.shippable
       },
       token =>
-        createStripeOrder(token, selectedSku.stripeId)
-          .then(() => {
-            this.resetSelectedAttributes();
-            this.setState({
-              paymentMessage: labels.paymentMessage.success
-            });
-          })
-          .catch(() => {
-            this.setState({
-              paymentMessage: labels.paymentMessage.fail
-            });
-          })
+        createAndPayStripeOrder({
+          currency: selectedSku.currency,
+          sku: {
+            id: selectedSku.stripeId,
+            description: skuDescription
+          },
+          amount: selectedSku.price,
+          token
+        })
+          .then(response => this.paymentSucess(response))
+          .catch(error => this.paymentFail(error))
     );
   };
 

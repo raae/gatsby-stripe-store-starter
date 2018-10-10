@@ -4,6 +4,7 @@
   "version": "0.0.1",
   "author": "Benedicte Raae (raae.codes)",
   "dependencies": {
+    "axios": "^0.18.0",
     "bulma": "^0.7.1",
     "classnames": "^2.2.6",
     "gatsby": "^2.0.0",
@@ -13,11 +14,14 @@
     "gatsby-plugin-sass": "^2.0.1",
     "gatsby-plugin-stripe-checkout": "^1.0.7",
     "gatsby-source-stripe": "github:raae/gatsby-source-stripe",
+    "http-proxy-middleware": "^0.19.0",
     "lodash": "^4.17.11",
+    "netlify-lambda": "^0.4.0",
     "node-sass": "^4.9.3",
     "react": "^16.5.1",
     "react-dom": "^16.5.1",
-    "react-helmet": "^5.2.0"
+    "react-helmet": "^5.2.0",
+    "stripe": "^6.12.1"
   },
   "keywords": [
     "gatsby",
@@ -27,7 +31,9 @@
   "license": "MIT",
   "scripts": {
     "build": "gatsby build",
+    "build:lambda": "netlify-lambda build src/lambda",
     "develop": "rm -r -f .cache && gatsby develop",
+    "develop:lambda": "netlify-lambda serve src/lambda",
     "format": "prettier --write '**/*.js'",
     "test": "echo \"Error: no test specified\" && exit 1"
   },

@@ -8,4 +8,5 @@ secrets.md
 
 # Build directory
 /public
+/lambda
 .DS_Store
