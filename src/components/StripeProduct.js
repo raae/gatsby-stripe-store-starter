@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import { uniq, zipObject, join, values } from "lodash";
+import { uniq, join, keys } from "lodash";
 import axios from "axios";
 
 const skuToLocalizedPrice = (sku, locale) => {
@@ -7,6 +7,32 @@ const skuToLocalizedPrice = (sku, locale) => {
     style: "currency",
     currency: sku.currency
   }).format(sku.price / 100);
+};
+
+const skuToDescription = (sku, labels, locale) => {
+  const attributes = keys(sku.attributes).map(attributeKey => {
+    const attributeValue = sku.attributes[attributeKey];
+    const attributeLabels = labels[attributeKey] || {};
+    return attributeLabels[attributeValue] || attributeValue;
+  });
+
+  const list = [...attributes, skuToLocalizedPrice(sku, locale)];
+
+  return join(list, " / ");
+};
+
+const skusToPossibleAttributes = (skus, attributeKeys) => {
+  return attributeKeys.reduce((acc, key) => {
+    const options = uniq(
+      skus.map(sku => {
+        return sku.attributes[key];
+      })
+    );
+
+    acc[key] = options;
+
+    return acc;
+  }, {});
 };
 
 const callStripeLambdaEndpoint = (endpoint, args) => {
@@ -37,40 +63,19 @@ const createAndPayStripeOrder = args => {
 
 const defaultState = {
   selectedAttributes: {},
-  attributes: []
+  attributes: {}
 };
 
 class StripeProduct extends Component {
   constructor(props) {
     super(props);
 
-    const { product = {}, skus = [], labels = {} } = props;
+    const { product = {}, skus = [] } = props;
     const attributeKeys = product.attributes || [];
-
-    const attributeLabels = {
-      ...zipObject(attributeKeys, attributeKeys.map(() => ({}))),
-      ...labels.attributes
-    };
-
-    const attributes = attributeKeys.map(key => {
-      const options = uniq(
-        skus.map(sku => {
-          return sku.attributes[key];
-        })
-      ).map(value => ({
-        key: value,
-        label: attributeLabels[key][value] || value
-      }));
-
-      return {
-        key,
-        options
-      };
-    });
 
     this.state = {
       ...defaultState,
-      attributes
+      attributes: skusToPossibleAttributes(skus, attributeKeys)
     };
   }
 
@@ -100,10 +105,10 @@ class StripeProduct extends Component {
   };
 
   isSelectedAttributesValid = () => {
-    const { selectedAttributes = {}, attributes = [] } = this.state;
+    const { selectedAttributes = {}, attributes = {} } = this.state;
 
-    return attributes.reduce(
-      (acc, attribute) => acc && !!selectedAttributes[attribute.key],
+    return keys(attributes).reduce(
+      (acc, attributeKey) => acc && !!selectedAttributes[attributeKey],
       true
     );
   };
@@ -113,10 +118,10 @@ class StripeProduct extends Component {
     const { selectedAttributes = {}, attributes = {} } = this.state;
 
     return skus.find(sku => {
-      return attributes.reduce(
-        (acc, attribute) =>
+      return keys(attributes).reduce(
+        (acc, attributeKey) =>
           acc &&
-          sku.attributes[attribute.key] === selectedAttributes[attribute.key],
+          sku.attributes[attributeKey] === selectedAttributes[attributeKey],
         true
       );
     });
@@ -173,16 +178,18 @@ class StripeProduct extends Component {
   };
 
   onBuy = () => {
-    const { product = {} } = this.props;
+    const { product = {}, labels = {}, locale } = this.props;
     const selectedSku = this.selectedSku();
-    const skuDescription = join(
-      [...values(selectedSku.attributes), skuToLocalizedPrice(selectedSku)],
-      " / "
+    const description = skuToDescription(
+      selectedSku,
+      labels.attributes,
+      locale
     );
 
     this.openStripeCheckout(
       {
         amount: selectedSku.price,
+        description: description,
         currency: selectedSku.currency,
         billingAddress: !!product.shippable
       },
@@ -191,10 +198,10 @@ class StripeProduct extends Component {
           currency: selectedSku.currency,
           sku: {
             id: selectedSku.stripeId,
-            description: skuDescription
-          },
-          amount: selectedSku.price,
-          token
+            description: description,
+            amount: selectedSku.price,
+            token
+          }
         })
           .then(response => this.paymentSucess(response))
           .catch(error => this.paymentFail(error))
@@ -214,7 +221,8 @@ class StripeProduct extends Component {
         title: product.name,
         price: this.priceLabel(),
         description: product.description,
-        buyButton: labels.buy
+        buyButton: labels.buy,
+        ...labels
       },
       paymentMessage: paymentMessage,
       images: product.images,

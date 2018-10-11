@@ -1,14 +1,14 @@
 import React from "react";
 import classNames from "classnames";
 
-const Option = ({ option, selectedKey, onChange }) => {
+const AttributeOption = ({ option, selectedOption, onChange, labels = {} }) => {
   const optionClasses = classNames("button", "is-small", {
-    "is-focused": option.key === selectedKey
+    "is-focused": option === selectedOption
   });
   return (
     <p className="control">
-      <button onClick={() => onChange(option.key)} className={optionClasses}>
-        {option.label}
+      <button onClick={() => onChange(option)} className={optionClasses}>
+        {labels[option] || option}
       </button>
     </p>
   );
@@ -17,10 +17,26 @@ const Option = ({ option, selectedKey, onChange }) => {
 const AttributeSelection = ({ options, ...props }) => (
   <div className="field is-grouped">
     {options.map(option => (
-      <Option key={option.key} option={option} {...props} />
+      <AttributeOption key={option} option={option} {...props} />
     ))}
   </div>
 );
+
+const Attributes = ({
+  attributes,
+  labels,
+  selectedAttributes,
+  onSelectedAttributesChange
+}) =>
+  Object.keys(attributes).map(attributeKey => (
+    <AttributeSelection
+      labels={labels[attributeKey]}
+      key={attributeKey}
+      selectedOption={selectedAttributes[attributeKey]}
+      options={attributes[attributeKey]}
+      onChange={option => onSelectedAttributesChange([attributeKey], option)}
+    />
+  ));
 
 const Product = ({
   labels = {},
@@ -53,16 +69,12 @@ const Product = ({
           className="columns is-vertically-centered"
         >
           <div className="column is-two-thirds">
-            {attributes.map(attribute => (
-              <AttributeSelection
-                key={attribute.key}
-                selectedKey={selectedAttributes[attribute.key]}
-                options={attribute.options}
-                onChange={selectedOption =>
-                  onSelectedAttributesChange([attribute.key], selectedOption)
-                }
-              />
-            ))}
+            <Attributes
+              labels={labels.attributes}
+              attributes={attributes}
+              selectedAttributes={selectedAttributes}
+              onSelectedAttributesChange={onSelectedAttributesChange}
+            />
           </div>
           <div className="column">
             <div className="field">
