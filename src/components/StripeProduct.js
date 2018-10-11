@@ -1,6 +1,5 @@
 import React, { Component } from "react";
 import { uniq, join, keys } from "lodash";
-import axios from "axios";
 
 const skuToLocalizedPrice = (sku, locale) => {
   return new Intl.NumberFormat(locale, {
@@ -9,14 +8,14 @@ const skuToLocalizedPrice = (sku, locale) => {
   }).format(sku.price / 100);
 };
 
-const skuToDescription = (sku, labels, locale) => {
+const productAndSkuToOrderItemDescription = (product, sku, labels, locale) => {
   const attributes = keys(sku.attributes).map(attributeKey => {
     const attributeValue = sku.attributes[attributeKey];
     const attributeLabels = labels[attributeKey] || {};
     return attributeLabels[attributeValue] || attributeValue;
   });
 
-  const list = [...attributes, skuToLocalizedPrice(sku, locale)];
+  const list = [product.name, ...attributes, skuToLocalizedPrice(sku, locale)];
 
   return join(list, " / ");
 };
@@ -35,32 +34,6 @@ const skusToPossibleAttributes = (skus, attributeKeys) => {
   }, {});
 };
 
-const callStripeLambdaEndpoint = (endpoint, args) => {
-  console.log("callStripeLambdaEndpoint", args);
-  return axios
-    .post(`/.netlify/functions/${endpoint}`, args)
-    .then(response => {
-      console.log(`/.netlify/functions/${endpoint}`, response);
-      return Promise.resolve(response);
-    })
-    .catch(error => {
-      const errorLabel = `/.netlify/functions/${endpoint}`;
-      if (error.response) {
-        console.error(errorLabel, error.response.status, error.response.data);
-      } else if (error.request) {
-        console.error(errorLabel, error.request);
-      } else {
-        console.error(errorLabel, error.message);
-      }
-
-      return Promise.reject(error);
-    });
-};
-
-const createAndPayStripeOrder = args => {
-  return callStripeLambdaEndpoint("createAndPayStripeOrder", args);
-};
-
 const defaultState = {
   selectedAttributes: {},
   attributes: {}
@@ -77,16 +50,6 @@ class StripeProduct extends Component {
       ...defaultState,
       attributes: skusToPossibleAttributes(skus, attributeKeys)
     };
-  }
-
-  componentDidMount() {
-    const { product = {}, lang, stripeKey } = this.props;
-
-    this.configureStripeCheckout({
-      key: stripeKey,
-      name: product.name,
-      locale: lang
-    });
   }
 
   onSelectedAttributesChange = (type, selectedKey) => {
@@ -136,30 +99,6 @@ class StripeProduct extends Component {
     return join(prices, " / ");
   };
 
-  configureStripeCheckout = (args, closeFunc) => {
-    if (!window.StripeCheckout) {
-      console.error("Stripe Checkout is not available on window");
-      return;
-    }
-
-    this.stripeHandler = window.StripeCheckout.configure({
-      ...args,
-      closed: closeFunc
-    });
-  };
-
-  openStripeCheckout = (args, tokenFunc) => {
-    if (!this.stripeHandler) {
-      console.error("Stripe Checkout is not available on window");
-      return;
-    }
-
-    this.stripeHandler.open({
-      ...args,
-      token: tokenFunc
-    });
-  };
-
   paymentSucess = () => {
     const { labels } = this.props;
 
@@ -177,34 +116,35 @@ class StripeProduct extends Component {
     });
   };
 
-  onBuy = () => {
-    const { product = {}, labels = {}, locale } = this.props;
+  onCheckout = () => {
+    const { product = {}, labels = {}, onCheckout, locale } = this.props;
     const selectedSku = this.selectedSku();
-    const description = skuToDescription(
+    const description = productAndSkuToOrderItemDescription(
+      product,
       selectedSku,
       labels.attributes,
       locale
     );
 
-    this.openStripeCheckout(
+    onCheckout(
       {
         amount: selectedSku.price,
         description: description,
         currency: selectedSku.currency,
         billingAddress: !!product.shippable
       },
-      token =>
-        createAndPayStripeOrder({
-          currency: selectedSku.currency,
-          sku: {
-            id: selectedSku.stripeId,
-            description: description,
-            amount: selectedSku.price,
-            token
-          }
-        })
-          .then(response => this.paymentSucess(response))
-          .catch(error => this.paymentFail(error))
+      {
+        currency: selectedSku.currency,
+        description: description,
+        item: {
+          type: "sku",
+          parent: selectedSku.stripeId,
+          quantity: 1
+        }
+      },
+      success => {
+        success ? this.paymentSucess() : this.paymentFail();
+      }
     );
   };
 
@@ -221,7 +161,7 @@ class StripeProduct extends Component {
         title: product.name,
         price: this.priceLabel(),
         description: product.description,
-        buyButton: labels.buy,
+        ceckout: labels.checkout,
         ...labels
       },
       paymentMessage: paymentMessage,
@@ -230,7 +170,7 @@ class StripeProduct extends Component {
       selectedAttributes: selectedAttributes,
       isSelectedAttributesValid: this.isSelectedAttributesValid(),
       onSelectedAttributesChange: this.onSelectedAttributesChange,
-      onBuy: this.onBuy,
+      onCheckout: this.onCheckout,
       onClearPaymentMessage: () => {
         this.setState({
           paymentMessage: undefined

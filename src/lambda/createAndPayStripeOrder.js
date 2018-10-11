@@ -1,7 +1,7 @@
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
 export function handler(event, context, callback) {
-  const { sku = {}, currency, token } = JSON.parse(event.body);
+  const { item, description, currency, token } = JSON.parse(event.body);
 
   Promise.resolve()
     .then(() => {
@@ -9,9 +9,10 @@ export function handler(event, context, callback) {
         email: token.email,
         currency: currency,
         items: [
+          item,
           {
             type: "sku",
-            parent: sku.id,
+            parent: "sku_DjLy6j1CO2JWST",
             quantity: 1
           }
         ],
@@ -38,7 +39,7 @@ export function handler(event, context, callback) {
       console.log("payment created", payment.id);
       return stripe.charges.update(payment.charge, {
         receipt_email: token.email,
-        description: sku.description
+        description: description
       });
     })
     .then(charge => {

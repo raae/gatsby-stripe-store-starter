@@ -46,10 +46,10 @@ const Product = ({
   selectedAttributes = {},
   isSelectedAttributesValid,
   onSelectedAttributesChange,
-  onBuy,
+  onCheckout,
   onClearPaymentMessage
 }) => {
-  const buyButtonClasses = classNames("button", "is-outlined", {
+  const checkoutButtonClasses = classNames("button", "is-outlined", {
     "is-active": isSelectedAttributesValid
   });
   const imageSrc = images[0];
@@ -79,11 +79,11 @@ const Product = ({
           <div className="column">
             <div className="field">
               <button
-                onClick={() => onBuy()}
+                onClick={() => onCheckout()}
                 disabled={!isSelectedAttributesValid}
-                className={buyButtonClasses}
+                className={checkoutButtonClasses}
               >
-                {labels.buyButton}
+                {labels.checkout}
               </button>
             </div>
           </div>
