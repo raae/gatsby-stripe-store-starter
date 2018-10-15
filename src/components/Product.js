@@ -1,13 +1,23 @@
 import React from "react";
 import classNames from "classnames";
 
-const AttributeOption = ({ option, selectedOption, onChange, labels = {} }) => {
+const AttributeOption = ({
+  option,
+  selectedOption,
+  isCheckoutInProgess,
+  onChange,
+  labels = {}
+}) => {
   const optionClasses = classNames("button", "is-small", {
     "is-focused": option === selectedOption
   });
   return (
     <p className="control">
-      <button onClick={() => onChange(option)} className={optionClasses}>
+      <button
+        disabled={isCheckoutInProgess}
+        onClick={() => onChange(option)}
+        className={optionClasses}
+      >
         {labels[option] || option}
       </button>
     </p>
@@ -25,6 +35,7 @@ const AttributeSelection = ({ options, ...props }) => (
 const Attributes = ({
   attributes,
   labels,
+  isCheckoutInProgess,
   selectedAttributes,
   onSelectedAttributesChange
 }) =>
@@ -32,6 +43,7 @@ const Attributes = ({
     <AttributeSelection
       labels={labels[attributeKey]}
       key={attributeKey}
+      isCheckoutInProgess={isCheckoutInProgess}
       selectedOption={selectedAttributes[attributeKey]}
       options={attributes[attributeKey]}
       onChange={option => onSelectedAttributesChange([attributeKey], option)}
@@ -73,6 +85,7 @@ const Product = ({
           <div className="column is-two-thirds">
             <Attributes
               labels={labels.attributes}
+              isCheckoutInProgess={isCheckoutInProgess}
               attributes={attributes}
               selectedAttributes={selectedAttributes}
               onSelectedAttributesChange={onSelectedAttributesChange}

@@ -176,6 +176,7 @@ class StripeProduct extends Component {
       onCheckout: this.onCheckout,
       onClearPaymentMessage: () => {
         this.setState({
+          selectedAttributes: defaultState.selectedAttributes,
           checkoutMessage: undefined
         });
       }
