@@ -1,43 +1,56 @@
 import React, { Component } from "react";
-import { uniq, zipObject, join } from "lodash";
+import { uniq, join, keys } from "lodash";
+
+const skuToLocalizedPrice = (sku, locale) => {
+  return new Intl.NumberFormat(locale, {
+    style: "currency",
+    currency: sku.currency
+  }).format(sku.price / 100);
+};
+
+const productAndSkuToOrderItemDescription = (product, sku, labels, locale) => {
+  const attributes = keys(sku.attributes).map(attributeKey => {
+    const attributeValue = sku.attributes[attributeKey];
+    const attributeLabels = labels[attributeKey] || {};
+    return attributeLabels[attributeValue] || attributeValue;
+  });
+
+  const list = [product.name, ...attributes, skuToLocalizedPrice(sku, locale)];
+
+  return join(list, " / ");
+};
+
+const skusToPossibleAttributes = (skus, attributeKeys) => {
+  return attributeKeys.reduce((acc, key) => {
+    const options = uniq(
+      skus.map(sku => {
+        return sku.attributes[key];
+      })
+    );
+
+    acc[key] = options;
+
+    return acc;
+  }, {});
+};
 
 const defaultState = {
-  attributeKeys: [],
+  isCheckoutInProgess: false,
   selectedAttributes: {},
-  attributes: {}
+  attributes: {},
+  checkoutMessage: undefined
 };
 
 class StripeProduct extends Component {
   constructor(props) {
     super(props);
 
-    const { product = {}, skus = [], labels = {} } = props;
+    const { product = {}, skus = [] } = props;
     const attributeKeys = product.attributes || [];
-
-    const attributeLabels = {
-      ...zipObject(attributeKeys, attributeKeys.map(() => ({}))),
-      ...labels.attributes
-    };
-
-    const attributes = attributeKeys.map(key => {
-      const options = uniq(
-        skus.map(sku => {
-          return sku.attributes[key];
-        })
-      ).map(value => ({
-        key: value,
-        label: attributeLabels[key][value] || value
-      }));
-
-      return {
-        key,
-        options
-      };
-    });
 
     this.state = {
       ...defaultState,
-      attributes
+      attributes: skusToPossibleAttributes(skus, attributeKeys)
     };
   }
 
@@ -52,37 +65,34 @@ class StripeProduct extends Component {
     });
   };
 
-  isSelectedAttributesValid = () => {
-    const { selectedAttributes = {}, attributes = [] } = this.state;
+  resetSelectedAttributes = () => {
+    this.setState({ selectedAttributes: {} });
+  };
 
-    return attributes.reduce(
-      (acc, attribute) => acc && !!selectedAttributes[attribute.key],
+  isSelectedAttributesValid = () => {
+    const { selectedAttributes = {}, attributes = {} } = this.state;
+
+    return keys(attributes).reduce(
+      (acc, attributeKey) => acc && !!selectedAttributes[attributeKey],
       true
     );
   };
 
   selectedSku = () => {
     const { skus = [] } = this.props;
-    const { selectedAttributes = {}, attributes = [] } = this.state;
+    const { selectedAttributes = {}, attributes = {} } = this.state;
 
     return skus.find(sku => {
-      return attributes.reduce(
-        (acc, attribute) =>
+      return keys(attributes).reduce(
+        (acc, attributeKey) =>
           acc &&
-          sku.attributes[attribute.key] === selectedAttributes[attribute.key],
+          sku.attributes[attributeKey] === selectedAttributes[attributeKey],
         true
       );
     });
   };
 
   priceLabel = () => {
-    const skuToLocalizedPrice = (sku, locale) => {
-      return new Intl.NumberFormat(locale, {
-        style: "currency",
-        currency: sku.currency
-      }).format(sku.price / 100);
-    };
-
     let { skus = [], locale } = this.props;
 
     skus = this.selectedSku() ? [this.selectedSku()] : skus;
@@ -91,30 +101,85 @@ class StripeProduct extends Component {
     return join(prices, " / ");
   };
 
-  onBuy = () => {
-    const { selectedAttributes = {} } = this.state;
+  onCheckout = () => {
+    this.setState({ isCheckoutInProgess: true });
 
-    console.log("Buy", selectedAttributes, this.selectedSku());
-    this.setState({ selectedAttributes: {} });
+    const { product = {}, labels = {}, onCheckout, locale } = this.props;
+    const selectedSku = this.selectedSku();
+    const description = productAndSkuToOrderItemDescription(
+      product,
+      selectedSku,
+      labels.attributes,
+      locale
+    );
+
+    onCheckout(
+      {
+        amount: selectedSku.price,
+        description: description,
+        currency: selectedSku.currency,
+        billingAddress: !!product.shippable
+      },
+      {
+        currency: selectedSku.currency,
+        description: description,
+        item: {
+          type: "sku",
+          parent: selectedSku.stripeId,
+          quantity: 1
+        }
+      },
+      status => {
+        let message = labels.paymentMessage.fail;
+
+        if (status.code === "success") {
+          message = labels.paymentMessage.success;
+        } else if (status.code === "out_of_inventory") {
+          message = labels.paymentMessage.outOfInventory;
+        } else if (status.code === "closed") {
+          message = undefined;
+        }
+
+        this.setState({
+          checkoutMessage: message,
+          isCheckoutInProgess: false
+        });
+      }
+    );
   };
 
   render() {
     const { product, labels, ProductComponent } = this.props;
-    const { selectedAttributes = {}, attributes = [] } = this.state;
+    const {
+      isCheckoutInProgess = false,
+      selectedAttributes = {},
+      attributes = [],
+      checkoutMessage
+    } = this.state;
 
     const props = {
       labels: {
         title: product.name,
         price: this.priceLabel(),
         description: product.description,
-        buyButton: labels.buy
+        ceckout: labels.checkout,
+        ...labels
       },
+      checkoutMessage: checkoutMessage,
       images: product.images,
       attributes: attributes,
       selectedAttributes: selectedAttributes,
-      isSelectedAttributesValid: this.isSelectedAttributesValid(),
+      isCheckoutPossible:
+        this.isSelectedAttributesValid() && !isCheckoutInProgess,
+      isCheckoutInProgess: isCheckoutInProgess,
       onSelectedAttributesChange: this.onSelectedAttributesChange,
-      onBuy: this.onBuy
+      onCheckout: this.onCheckout,
+      onClearPaymentMessage: () => {
+        this.setState({
+          selectedAttributes: defaultState.selectedAttributes,
+          checkoutMessage: undefined
+        });
+      }
     };
 
     return <ProductComponent {...props} />;

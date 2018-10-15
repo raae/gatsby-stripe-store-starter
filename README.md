@@ -14,4 +14,4 @@ TODO: Add checkout flow
 
 ### Development
 
-- Run `STRIPE_KEY=<your key here> gatsby develop`.
+- Run `STRIPE_SECRET_KEY=<your stripe secret key here> GATSBY_STRIPE_PUBLISHABLE_KEY=<your stripe publishable key here> gatsby develop`.
