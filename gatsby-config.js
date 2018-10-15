@@ -2,11 +2,11 @@ const proxy = require("http-proxy-middleware");
 
 module.exports = {
   siteMetadata: {
-    title: "Stripe Store",
-    description: "A store with products from Stripe",
-    keywords: "",
-    lang: "no",
-    locale: "no-bok"
+    title: process.env.SITE_TITLE || "Stripe Store",
+    description:
+      process.env.SITE_DESCRIPTION || "A store with products from Stripe",
+    lang: process.env.SITE_LANG || "en",
+    locale: process.env.SITE_LOCALE || "en"
   },
   developMiddleware: app => {
     app.use(

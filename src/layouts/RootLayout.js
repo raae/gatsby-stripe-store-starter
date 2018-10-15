@@ -13,7 +13,6 @@ const Layout = ({ children }) => (
           siteMetadata {
             title
             description
-            keywords
           }
         }
       }
@@ -26,8 +25,7 @@ const Layout = ({ children }) => (
             {
               name: "description",
               content: data.site.siteMetadata.description
-            },
-            { name: "keywords", content: data.site.siteMetadata.keywords }
+            }
           ]}
         >
           <html lang={data.site.siteMetadata.lang} />
