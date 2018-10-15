@@ -90,7 +90,9 @@ const IndexPage = () => (
                     paymentMessage: {
                       success:
                         "Takk for handelen, t-skjorte på vei til deg innen få dager.",
-                      fail: "Noe gikk galt, prøv igen eller ta kontakt. "
+                      fail: "Noe gikk galt, prøv igen eller ta kontakt. ",
+                      outOfInventory:
+                        "Det er dessverre ikke flere igjen av den t-skjorten."
                     }
                   }}
                   ProductComponent={Product}

@@ -35,8 +35,10 @@ const skusToPossibleAttributes = (skus, attributeKeys) => {
 };
 
 const defaultState = {
+  isCheckoutInProgess: false,
   selectedAttributes: {},
-  attributes: {}
+  attributes: {},
+  checkoutMessage: undefined
 };
 
 class StripeProduct extends Component {
@@ -99,24 +101,9 @@ class StripeProduct extends Component {
     return join(prices, " / ");
   };
 
-  paymentSucess = () => {
-    const { labels } = this.props;
-
-    this.resetSelectedAttributes();
-    this.setState({
-      paymentMessage: labels.paymentMessage.success
-    });
-  };
-
-  paymentFail = () => {
-    const { labels } = this.props;
-
-    this.setState({
-      paymentMessage: labels.paymentMessage.fail
-    });
-  };
-
   onCheckout = () => {
+    this.setState({ isCheckoutInProgess: true });
+
     const { product = {}, labels = {}, onCheckout, locale } = this.props;
     const selectedSku = this.selectedSku();
     const description = productAndSkuToOrderItemDescription(
@@ -142,8 +129,21 @@ class StripeProduct extends Component {
           quantity: 1
         }
       },
-      success => {
-        success ? this.paymentSucess() : this.paymentFail();
+      status => {
+        let message = labels.paymentMessage.fail;
+
+        if (status.code === "success") {
+          message = labels.paymentMessage.success;
+        } else if (status.code === "out_of_inventory") {
+          message = labels.paymentMessage.outOfInventory;
+        } else if (status.code === "closed") {
+          message = undefined;
+        }
+
+        this.setState({
+          checkoutMessage: message,
+          isCheckoutInProgess: false
+        });
       }
     );
   };
@@ -151,9 +151,10 @@ class StripeProduct extends Component {
   render() {
     const { product, labels, ProductComponent } = this.props;
     const {
+      isCheckoutInProgess = false,
       selectedAttributes = {},
       attributes = [],
-      paymentMessage
+      checkoutMessage
     } = this.state;
 
     const props = {
@@ -164,16 +165,18 @@ class StripeProduct extends Component {
         ceckout: labels.checkout,
         ...labels
       },
-      paymentMessage: paymentMessage,
+      checkoutMessage: checkoutMessage,
       images: product.images,
       attributes: attributes,
       selectedAttributes: selectedAttributes,
-      isSelectedAttributesValid: this.isSelectedAttributesValid(),
+      isCheckoutPossible:
+        this.isSelectedAttributesValid() && !isCheckoutInProgess,
+      isCheckoutInProgess: isCheckoutInProgess,
       onSelectedAttributesChange: this.onSelectedAttributesChange,
       onCheckout: this.onCheckout,
       onClearPaymentMessage: () => {
         this.setState({
-          paymentMessage: undefined
+          checkoutMessage: undefined
         });
       }
     };

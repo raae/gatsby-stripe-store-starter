@@ -40,17 +40,19 @@ const Attributes = ({
 
 const Product = ({
   labels = {},
-  paymentMessage,
+  checkoutMessage,
   images = [],
   attributes = [],
   selectedAttributes = {},
-  isSelectedAttributesValid,
+  isCheckoutInProgess,
+  isCheckoutPossible,
   onSelectedAttributesChange,
   onCheckout,
   onClearPaymentMessage
 }) => {
   const checkoutButtonClasses = classNames("button", "is-outlined", {
-    "is-active": isSelectedAttributesValid
+    "is-active": isCheckoutPossible,
+    "is-loading": isCheckoutInProgess
   });
   const imageSrc = images[0];
 
@@ -80,21 +82,21 @@ const Product = ({
             <div className="field">
               <button
                 onClick={() => onCheckout()}
-                disabled={!isSelectedAttributesValid}
+                disabled={!isCheckoutPossible}
                 className={checkoutButtonClasses}
               >
                 {labels.checkout}
               </button>
             </div>
           </div>
-          {paymentMessage && (
+          {checkoutMessage && (
             <div className="is-overlay has-background-white center-content">
               <div className="notification">
                 <button
                   onClick={() => onClearPaymentMessage()}
                   className="delete is-small"
                 />
-                <p>{paymentMessage}</p>
+                <p>{checkoutMessage}</p>
               </div>
             </div>
           )}
