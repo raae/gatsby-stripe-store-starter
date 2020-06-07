@@ -1,3 +1,5 @@
+[![Gitpod ready-to-code](https://img.shields.io/badge/Gitpod-ready--to--code-blue?logo=gitpod)](https://gitpod.io/#https://github.com/raae/gatsby-stripe-store-starter)
+
 # gatsby-stripe-store-starter
 
 This starter creates a store with inventory from a Stripe account.
